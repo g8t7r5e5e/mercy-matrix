@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { StoreProvider } from "@/lib/store";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -72,11 +74,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "WelfareOS — Social Welfare Command Center" },
+      { name: "description", content: "Centralized platform for managing welfare projects, donations, blood requests, and volunteers." },
+      { name: "author", content: "WelfareOS" },
+      { property: "og:title", content: "WelfareOS — Social Welfare Command Center" },
+      { property: "og:description", content: "Centralized platform for managing welfare projects, donations, blood requests, and volunteers." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -113,7 +115,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <StoreProvider>
+        <Outlet />
+        <Toaster richColors position="top-right" />
+      </StoreProvider>
     </QueryClientProvider>
   );
 }
