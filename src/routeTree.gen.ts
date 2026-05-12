@@ -13,8 +13,20 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppVolunteersRouteImport } from './routes/app.volunteers'
+import { Route as AppUsersRouteImport } from './routes/app.users'
+import { Route as AppTasksRouteImport } from './routes/app.tasks'
 import { Route as AppSubmitRouteImport } from './routes/app.submit'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppProjectsRouteImport } from './routes/app.projects'
+import { Route as AppMessagesRouteImport } from './routes/app.messages'
+import { Route as AppFinanceRouteImport } from './routes/app.finance'
+import { Route as AppDonorsRouteImport } from './routes/app.donors'
+import { Route as AppBloodDonorsRouteImport } from './routes/app.blood-donors'
+import { Route as AppBloodRouteImport } from './routes/app.blood'
+import { Route as AppAuditRouteImport } from './routes/app.audit'
+import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppProjectsIdRouteImport } from './routes/app.projects.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -37,14 +49,74 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppVolunteersRoute = AppVolunteersRouteImport.update({
+  id: '/volunteers',
+  path: '/volunteers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSubmitRoute = AppSubmitRouteImport.update({
   id: '/submit',
   path: '/submit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProjectsRoute = AppProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMessagesRoute = AppMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceRoute = AppFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDonorsRoute = AppDonorsRouteImport.update({
+  id: '/donors',
+  path: '/donors',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBloodDonorsRoute = AppBloodDonorsRouteImport.update({
+  id: '/blood-donors',
+  path: '/blood-donors',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBloodRoute = AppBloodRouteImport.update({
+  id: '/blood',
+  path: '/blood',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAuditRoute = AppAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
@@ -57,16 +129,40 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/audit': typeof AppAuditRoute
+  '/app/blood': typeof AppBloodRoute
+  '/app/blood-donors': typeof AppBloodDonorsRoute
+  '/app/donors': typeof AppDonorsRoute
+  '/app/finance': typeof AppFinanceRoute
+  '/app/messages': typeof AppMessagesRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
+  '/app/reports': typeof AppReportsRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/submit': typeof AppSubmitRoute
+  '/app/tasks': typeof AppTasksRoute
+  '/app/users': typeof AppUsersRoute
+  '/app/volunteers': typeof AppVolunteersRoute
   '/app/': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/audit': typeof AppAuditRoute
+  '/app/blood': typeof AppBloodRoute
+  '/app/blood-donors': typeof AppBloodDonorsRoute
+  '/app/donors': typeof AppDonorsRoute
+  '/app/finance': typeof AppFinanceRoute
+  '/app/messages': typeof AppMessagesRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
+  '/app/reports': typeof AppReportsRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/submit': typeof AppSubmitRoute
+  '/app/tasks': typeof AppTasksRoute
+  '/app/users': typeof AppUsersRoute
+  '/app/volunteers': typeof AppVolunteersRoute
   '/app': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
 }
@@ -75,8 +171,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/audit': typeof AppAuditRoute
+  '/app/blood': typeof AppBloodRoute
+  '/app/blood-donors': typeof AppBloodDonorsRoute
+  '/app/donors': typeof AppDonorsRoute
+  '/app/finance': typeof AppFinanceRoute
+  '/app/messages': typeof AppMessagesRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
+  '/app/reports': typeof AppReportsRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/submit': typeof AppSubmitRoute
+  '/app/tasks': typeof AppTasksRoute
+  '/app/users': typeof AppUsersRoute
+  '/app/volunteers': typeof AppVolunteersRoute
   '/app/': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
 }
@@ -86,16 +194,40 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/app/analytics'
+    | '/app/audit'
+    | '/app/blood'
+    | '/app/blood-donors'
+    | '/app/donors'
+    | '/app/finance'
+    | '/app/messages'
     | '/app/projects'
+    | '/app/reports'
+    | '/app/settings'
     | '/app/submit'
+    | '/app/tasks'
+    | '/app/users'
+    | '/app/volunteers'
     | '/app/'
     | '/app/projects/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/app/analytics'
+    | '/app/audit'
+    | '/app/blood'
+    | '/app/blood-donors'
+    | '/app/donors'
+    | '/app/finance'
+    | '/app/messages'
     | '/app/projects'
+    | '/app/reports'
+    | '/app/settings'
     | '/app/submit'
+    | '/app/tasks'
+    | '/app/users'
+    | '/app/volunteers'
     | '/app'
     | '/app/projects/$id'
   id:
@@ -103,8 +235,20 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/app/analytics'
+    | '/app/audit'
+    | '/app/blood'
+    | '/app/blood-donors'
+    | '/app/donors'
+    | '/app/finance'
+    | '/app/messages'
     | '/app/projects'
+    | '/app/reports'
+    | '/app/settings'
     | '/app/submit'
+    | '/app/tasks'
+    | '/app/users'
+    | '/app/volunteers'
     | '/app/'
     | '/app/projects/$id'
   fileRoutesById: FileRoutesById
@@ -145,6 +289,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/volunteers': {
+      id: '/app/volunteers'
+      path: '/volunteers'
+      fullPath: '/app/volunteers'
+      preLoaderRoute: typeof AppVolunteersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/users': {
+      id: '/app/users'
+      path: '/users'
+      fullPath: '/app/users'
+      preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks': {
+      id: '/app/tasks'
+      path: '/tasks'
+      fullPath: '/app/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/submit': {
       id: '/app/submit'
       path: '/submit'
@@ -152,11 +317,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubmitRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/projects': {
       id: '/app/projects'
       path: '/projects'
       fullPath: '/app/projects'
       preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/messages': {
+      id: '/app/messages'
+      path: '/messages'
+      fullPath: '/app/messages'
+      preLoaderRoute: typeof AppMessagesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/finance': {
+      id: '/app/finance'
+      path: '/finance'
+      fullPath: '/app/finance'
+      preLoaderRoute: typeof AppFinanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/donors': {
+      id: '/app/donors'
+      path: '/donors'
+      fullPath: '/app/donors'
+      preLoaderRoute: typeof AppDonorsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/blood-donors': {
+      id: '/app/blood-donors'
+      path: '/blood-donors'
+      fullPath: '/app/blood-donors'
+      preLoaderRoute: typeof AppBloodDonorsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/blood': {
+      id: '/app/blood'
+      path: '/blood'
+      fullPath: '/app/blood'
+      preLoaderRoute: typeof AppBloodRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/audit': {
+      id: '/app/audit'
+      path: '/audit'
+      fullPath: '/app/audit'
+      preLoaderRoute: typeof AppAuditRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analytics': {
+      id: '/app/analytics'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/projects/$id': {
@@ -182,14 +410,38 @@ const AppProjectsRouteWithChildren = AppProjectsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppAuditRoute: typeof AppAuditRoute
+  AppBloodRoute: typeof AppBloodRoute
+  AppBloodDonorsRoute: typeof AppBloodDonorsRoute
+  AppDonorsRoute: typeof AppDonorsRoute
+  AppFinanceRoute: typeof AppFinanceRoute
+  AppMessagesRoute: typeof AppMessagesRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
+  AppReportsRoute: typeof AppReportsRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppSubmitRoute: typeof AppSubmitRoute
+  AppTasksRoute: typeof AppTasksRoute
+  AppUsersRoute: typeof AppUsersRoute
+  AppVolunteersRoute: typeof AppVolunteersRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppAuditRoute: AppAuditRoute,
+  AppBloodRoute: AppBloodRoute,
+  AppBloodDonorsRoute: AppBloodDonorsRoute,
+  AppDonorsRoute: AppDonorsRoute,
+  AppFinanceRoute: AppFinanceRoute,
+  AppMessagesRoute: AppMessagesRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
+  AppReportsRoute: AppReportsRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppSubmitRoute: AppSubmitRoute,
+  AppTasksRoute: AppTasksRoute,
+  AppUsersRoute: AppUsersRoute,
+  AppVolunteersRoute: AppVolunteersRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
