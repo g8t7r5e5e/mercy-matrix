@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
 import { useState } from "react";
 import { StatusBadge, UrgencyBadge } from "@/components/Badges";
@@ -18,8 +18,7 @@ export const Route = createFileRoute("/app/projects/$id")({
 
 function ProjectDetail() {
   const { id } = Route.useParams();
-  const navigate = useNavigate();
-  const { projects, user, addDonation, addMessage, closeProject, markBloodUsed, updateProject } = useStore();
+  const { projects, user, addDonation, addMessage, addProjectUpdate, closeProject, markBloodUsed, updateProject, refreshProjects, projectsLoading } = useStore();
   const project = projects.find((p) => p.id === id);
 
   const [donor, setDonor] = useState("");
@@ -30,7 +29,10 @@ function ProjectDetail() {
     return (
       <div className="space-y-4">
         <Link to="/app/projects" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="mr-1 h-4 w-4" />Back to projects</Link>
-        <div className="rounded-2xl border border-border bg-card p-8 text-center">Project not found.</div>
+        <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          {projectsLoading ? "Loading project details..." : "Project not found."}
+          <div className="mt-4"><Button variant="outline" onClick={() => void refreshProjects(true)}>Retry / Refresh Data</Button></div>
+        </div>
       </div>
     );
   }
@@ -38,19 +40,61 @@ function ProjectDetail() {
   const pct = project.target > 0 ? Math.min(100, (project.raised / project.target) * 100) : 0;
   const remaining = Math.max(0, project.target - project.raised);
 
-  const onAddDonation = () => {
+  const onAddDonation = async () => {
     if (!donor.trim() || !amount || amount <= 0) return toast.error("Enter donor name and amount");
-    addDonation(project.id, donor, amount);
-    toast.success(`Funds added · ${formatPKR(amount)}`);
-    setDonor(""); setAmount(10000);
+    try {
+      await addDonation(project.id, donor, amount);
+      toast.success(`Funds added · ${formatPKR(amount)}`);
+      setDonor(""); setAmount(10000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to add donation");
+    }
   };
-  const onSend = () => {
-    if (!msg.trim() || !user) return;
-    addMessage(project.id, user.name, user.role, msg);
-    setMsg("");
+  const onSend = async () => {
+    if (!msg.trim() || !user) return toast.error("Write a message first");
+    try {
+      await addMessage(project.id, user.name, user.role, msg);
+      toast.success("Project message sent");
+      setMsg("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to send message");
+    }
   };
-  const onClose = () => { closeProject(project.id); toast.success("Project closed · proof emailed to donors"); };
-  const onBlood = () => { markBloodUsed(project.id); toast.success("Thank-you message sent to donors"); };
+  const setStatus = async (status: typeof project.status) => {
+    try {
+      await updateProject(project.id, { status });
+      toast.success(`Project ${status.toLowerCase()} successfully`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update project");
+    }
+  };
+  const onClose = async () => {
+    try {
+      await closeProject(project.id);
+      toast.success("Project closed successfully");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to close project");
+    }
+  };
+  const onBlood = async () => {
+    try {
+      await markBloodUsed(project.id);
+      toast.success("Thank-you message sent to donors");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update blood request");
+    }
+  };
+  const prepared = () => toast.info("This action is prepared and will be connected in the next module.");
+  const onAddUpdate = async () => {
+    const note = window.prompt("Add a short timeline note for this project");
+    if (!note?.trim()) return;
+    try {
+      await addProjectUpdate(project.id, note.trim());
+      toast.success("Update added");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to add update");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -75,9 +119,13 @@ function ProjectDetail() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => updateProject(project.id, { status: "Verified" })}><CheckCircle2 className="mr-1 h-4 w-4" />Verify</Button>
-            <Button variant="outline" onClick={() => toast.success("Member assigned successfully")}>Assign Member</Button>
-            <Button onClick={onClose} className="bg-gradient-brand">Close Project</Button>
+            <Button variant="outline" onClick={() => void refreshProjects(true)} disabled={projectsLoading}>Refresh Data</Button>
+            <Button variant="outline" onClick={() => void setStatus("Verified")}><CheckCircle2 className="mr-1 h-4 w-4" />Mark as Verified</Button>
+            <Button variant="outline" onClick={() => void setStatus("Active")}>Mark as Active</Button>
+            <Button variant="outline" onClick={() => void setStatus("Completed")}>Mark as Completed</Button>
+            <Button variant="outline" onClick={() => void setStatus("Archived")}>Archive Project</Button>
+            <Button variant="outline" onClick={prepared}>Assign Member</Button>
+            <Button onClick={() => void onClose()} className="bg-gradient-brand">Close Project</Button>
           </div>
         </div>
 
@@ -117,6 +165,10 @@ function ProjectDetail() {
 
         <TabsContent value="timeline" className="mt-4">
           <div className="bg-gradient-card rounded-2xl border border-border p-5 shadow-soft">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <div className="text-sm font-semibold">Project timeline</div>
+              <Button variant="outline" size="sm" onClick={() => void onAddUpdate()}>Add Update</Button>
+            </div>
             <ol className="relative ml-3 border-l border-border">
               {project.timeline.length === 0 && <li className="ml-4 py-2 text-sm text-muted-foreground">No timeline events yet.</li>}
               {project.timeline.map((t) => (
@@ -155,8 +207,8 @@ function ProjectDetail() {
               <div className="space-y-3">
                 <input value={donor} onChange={(e) => setDonor(e.target.value)} placeholder="Donor name" className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-ring" />
                 <input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} placeholder="Amount (PKR)" className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-ring" />
-                <Button onClick={onAddDonation} className="w-full bg-gradient-brand"><Plus className="mr-1 h-4 w-4" />Add donation</Button>
-                <Button variant="outline" onClick={() => toast.success("Receipt uploaded")} className="w-full"><Upload className="mr-1 h-4 w-4" />Upload receipt</Button>
+                <Button onClick={() => void onAddDonation()} className="w-full bg-gradient-brand"><Plus className="mr-1 h-4 w-4" />Add donation</Button>
+                <Button variant="outline" onClick={prepared} className="w-full"><Upload className="mr-1 h-4 w-4" />Upload receipt</Button>
               </div>
             </div>
           </div>
@@ -170,7 +222,7 @@ function ProjectDetail() {
                 <Stat label="Units required" value={String(project.unitsRequired ?? 0)} />
                 <Stat label="Units arranged" value={`${project.unitsArranged ?? 0}/${project.unitsRequired ?? 0}`} tone="text-success" />
                 <div className="md:col-span-3">
-                  <Button onClick={onBlood} className="bg-destructive text-destructive-foreground hover:opacity-90"><Droplets className="mr-1 h-4 w-4" />Mark blood used</Button>
+                  <Button onClick={() => void onBlood()} className="bg-destructive text-destructive-foreground hover:opacity-90"><Droplets className="mr-1 h-4 w-4" />Mark blood used</Button>
                 </div>
               </div>
             ) : <div className="text-sm text-muted-foreground">This project is not a blood request.</div>}
@@ -188,7 +240,7 @@ function ProjectDetail() {
                 </div>
               </div>
             ))}
-            <button onClick={() => toast.success("Document uploaded")} className="bg-gradient-card flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground hover-lift">
+            <button onClick={prepared} className="bg-gradient-card flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground hover-lift">
               <Upload className="h-4 w-4" /> Upload document
             </button>
           </div>
@@ -198,7 +250,7 @@ function ProjectDetail() {
           <div className="bg-gradient-card rounded-2xl border border-border p-5 shadow-soft">
             <div className="mb-3 flex items-center justify-between">
               <div className="text-sm font-semibold">Assigned team</div>
-              <Button variant="outline" size="sm" onClick={() => toast.success("Member assigned successfully")}><UsersIcon className="mr-1 h-4 w-4" />Assign new member</Button>
+              <Button variant="outline" size="sm" onClick={prepared}><UsersIcon className="mr-1 h-4 w-4" />Assign new member</Button>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <TeamCard role="Wing Head" name="Bilal Ahmad" />
@@ -232,8 +284,8 @@ function ProjectDetail() {
               })}
             </div>
             <div className="flex items-center gap-2 border-t border-border p-3">
-              <input value={msg} onChange={(e) => setMsg(e.target.value)} onKeyDown={(e) => e.key === "Enter" && onSend()} placeholder="Write a message..." className="h-10 flex-1 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-ring" />
-              <Button onClick={onSend} className="bg-gradient-brand"><Send className="h-4 w-4" /></Button>
+              <input value={msg} onChange={(e) => setMsg(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void onSend()} placeholder="Write a message..." className="h-10 flex-1 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-ring" />
+              <Button onClick={() => void onSend()} className="bg-gradient-brand"><Send className="h-4 w-4" /></Button>
             </div>
           </div>
         </TabsContent>
@@ -262,8 +314,8 @@ function ProjectDetail() {
               ))}
             </ul>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Button onClick={() => toast.success("Donor report generated")}>Generate donor report</Button>
-              <Button onClick={onClose} className="bg-gradient-brand">Close project</Button>
+              <Button onClick={prepared}>Generate donor report</Button>
+              <Button onClick={() => void onClose()} className="bg-gradient-brand">Close project</Button>
             </div>
           </div>
         </TabsContent>

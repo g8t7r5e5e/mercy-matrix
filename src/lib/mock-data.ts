@@ -7,6 +7,7 @@ export interface User {
   role: Role;
   wing?: string;
   avatar?: string;
+  wingId?: string;
 }
 
 export const ACCOUNTS: Array<User & { password: string }> = [
@@ -49,6 +50,9 @@ export interface Project {
   donations: Donation[];
   messages: Message[];
   documents: DocItem[];
+  dbId?: string;
+  livesImpacted?: number;
+  metadata?: Record<string, unknown>;
 }
 
 const now = new Date();
