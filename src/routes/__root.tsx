@@ -82,6 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "WelfareOS — Social Welfare Command Center" },
+      { name: "twitter:description", content: "Centralized platform for managing welfare projects, donations, blood requests, and volunteers." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/05e84d74-48f6-4366-a6ad-bf3593092450/id-preview-ba6371af--ea4e7292-8e24-42af-8d81-25e7db1a74e5.lovable.app-1778660829637.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/05e84d74-48f6-4366-a6ad-bf3593092450/id-preview-ba6371af--ea4e7292-8e24-42af-8d81-25e7db1a74e5.lovable.app-1778660829637.png" },
     ],
     links: [
       {
