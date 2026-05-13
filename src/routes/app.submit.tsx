@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CheckCircle2, FileUp } from "lucide-react";
-import { WINGS, type ProjectType, type Urgency } from "@/lib/mock-data";
+import { type ProjectType, type Urgency } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/app/submit")({
   component: SubmitPage,
@@ -14,7 +14,7 @@ const TYPES: ProjectType[] = ["Medical Aid", "Blood Donation", "Financial Aid", 
 const URGENCIES: Urgency[] = ["Low", "Medium", "High", "Critical"];
 
 function SubmitPage() {
-  const { addProject } = useStore();
+  const { addProject, isSupabaseData } = useStore();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     requester: "", contact: "", email: "", city: "Peshawar",
@@ -23,25 +23,33 @@ function SubmitPage() {
     urgency: "Medium" as Urgency, consent: false,
   });
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const set = (k: keyof typeof form, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.requester || !form.contact || !form.consent) {
       toast.error("Please fill all required fields and accept consent");
       return;
     }
-    const id = addProject({
-      title: form.title, type: form.type, status: "Pending Review", urgency: form.urgency,
-      wing: form.type === "Blood Donation" ? "Blood Wing" : form.type === "Financial Aid" ? "Finance Wing" : "Medical Aid Wing",
-      assignedMember: "—", city: form.city, hospital: form.hospital || undefined,
-      requester: form.requester, contact: form.contact,
-      description: form.description, target: Number(form.target) || 0,
-      bloodGroup: form.bloodGroup || undefined, unitsRequired: Number(form.units) || undefined, unitsArranged: 0,
-    });
-    setSubmittedId(id);
-    toast.success("Your request has been submitted. Our team will review it soon.");
+    setSubmitting(true);
+    try {
+      const id = await addProject({
+        title: form.title, type: form.type, status: "Pending Review", urgency: form.urgency,
+        wing: form.type === "Blood Donation" ? "Blood Wing" : form.type === "Financial Aid" ? "Finance Wing" : form.type === "Welfare Campaign" || form.type === "Community Support" ? "Volunteer Wing" : "Medical Aid Wing",
+        assignedMember: "—", city: form.city, hospital: form.hospital || undefined,
+        requester: form.requester, contact: form.contact,
+        description: form.description, target: Number(form.target) || 0,
+        bloodGroup: form.bloodGroup || undefined, unitsRequired: Number(form.units) || undefined, unitsArranged: 0,
+      });
+      setSubmittedId(id);
+      toast.success(`${isSupabaseData ? "Project submitted to Supabase" : "Demo project submitted"} · ${id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Project submission failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submittedId) {
@@ -114,7 +122,7 @@ function SubmitPage() {
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => history.back()}>Cancel</Button>
-          <Button type="submit" className="bg-gradient-brand">Submit project</Button>
+          <Button type="submit" disabled={submitting} className="bg-gradient-brand">{submitting ? "Submitting..." : "Submit project"}</Button>
         </div>
       </form>
     </div>

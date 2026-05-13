@@ -36,15 +36,17 @@ const wingPerf = [
 ];
 
 export default function Dashboard() {
-  const { user, projects, activity } = useStore();
+  const { user, projects, activity, refreshProjects, projectsLoading, isSupabaseData } = useStore();
 
   const totalRaised = projects.reduce((s, p) => s + p.raised, 0);
   const disbursed = Math.floor(totalRaised * 0.78);
   const active = projects.filter((p) => ["Active", "In Progress", "Partially Funded", "Donor Matched"].includes(p.status)).length;
   const completed = projects.filter((p) => ["Completed", "Closed"].includes(p.status)).length;
   const pending = projects.filter((p) => p.status === "Pending Review").length;
-  const blood = projects.filter((p) => p.type === "Blood Donation").reduce((s, p) => s + (p.unitsArranged || 0), 0) + 38;
-  const lives = 1284;
+  const bloodProjects = projects.filter((p) => p.type === "Blood Donation").length;
+  const blood = projects.filter((p) => p.type === "Blood Donation").reduce((s, p) => s + (p.unitsArranged || 0), 0);
+  const critical = projects.filter((p) => p.urgency === "Critical" || p.urgency === "High").length;
+  const lives = projects.reduce((s, p) => s + (p.livesImpacted || (p.status === "Completed" || p.status === "Closed" ? 5 : 1)), 0);
 
   const typeData = ["Medical Aid", "Blood Donation", "Financial Aid", "Welfare Campaign", "Community Support", "Emergency Patient"].map((t) => ({
     name: t, value: projects.filter((p) => p.type === t).length,
@@ -54,15 +56,15 @@ export default function Dashboard() {
   const urgentCases = projects.filter((p) => p.urgency === "Critical" || p.status === "Pending Review").slice(0, 4);
 
   const kpis = [
-    { icon: Heart, label: "Total Lives Impacted", value: lives, sub: "+18% this quarter", tone: "text-success" },
+    { icon: Heart, label: "Total Lives Impacted", value: lives, sub: "from connected projects", tone: "text-success" },
     { icon: FolderKanban, label: "Total Projects", value: projects.length, sub: "across all wings" },
     { icon: Activity, label: "Active Projects", value: active, sub: "currently running" },
     { icon: CheckCircle2, label: "Completed", value: completed, sub: "successfully closed", tone: "text-success" },
-    { icon: HandCoins, label: "Funds Raised", value: totalRaised, prefix: "PKR ", sub: "+12% MoM", tone: "text-success" },
+    { icon: HandCoins, label: "Funds Raised", value: totalRaised, prefix: "PKR ", sub: "from project records", tone: "text-success" },
     { icon: BadgeCheck, label: "Funds Disbursed", value: disbursed, prefix: "PKR ", sub: "to verified cases" },
-    { icon: Droplets, label: "Blood Units", value: blood, sub: "arranged this year", tone: "text-destructive" },
-    { icon: Users, label: "Active Donors", value: 142, sub: "+9 new this month" },
-    { icon: UserPlus, label: "Volunteers", value: 38, sub: "on the ground" },
+    { icon: Droplets, label: "Blood Units", value: blood, sub: `${bloodProjects} blood projects`, tone: "text-destructive" },
+    { icon: Users, label: "Critical/Urgent", value: critical, sub: "high priority projects", tone: "text-destructive" },
+    { icon: UserPlus, label: "Active Donors", value: 142, sub: "future donation module" },
     { icon: AlertTriangle, label: "Pending Approvals", value: pending, sub: "awaiting review", tone: "text-warning" },
   ];
 
@@ -71,11 +73,12 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back, {user?.name?.split(" ")[0]}</h1>
-          <p className="text-sm text-muted-foreground">Here's what's happening across WelfareOS today.</p>
+          <p className="text-sm text-muted-foreground">Here's what's happening across WelfareOS today.{isSupabaseData ? " Supabase project data is live." : " Demo fallback data is active."}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/app/submit"><Button className="bg-gradient-brand"><Plus className="mr-1 h-4 w-4" />New Project</Button></Link>
           <Link to="/app/blood"><Button variant="outline"><Droplets className="mr-1 h-4 w-4" />Blood Request</Button></Link>
+          <Button variant="outline" onClick={() => void refreshProjects(true)} disabled={projectsLoading}>Refresh Data</Button>
           <Link to="/app/reports"><Button variant="outline"><FileBarChart className="mr-1 h-4 w-4" />Generate Report</Button></Link>
         </div>
       </div>
