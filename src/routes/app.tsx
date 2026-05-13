@@ -9,21 +9,21 @@ export const Route = createFileRoute("/app")({
 });
 
 function AppLayout() {
-  const { user } = useStore();
+  const { user, authLoading } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
     // wait a tick for hydration
     const t = setTimeout(() => {
-      if (!user) navigate({ to: "/login" });
+      if (!authLoading && !user) navigate({ to: "/login" });
     }, 50);
     return () => clearTimeout(t);
-  }, [user, navigate]);
+  }, [authLoading, user, navigate]);
 
-  if (!user) {
+  if (authLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="text-sm text-muted-foreground">Checking session…</div>
       </div>
     );
   }

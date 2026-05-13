@@ -4,13 +4,19 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
- * Prepared Supabase browser client for the upcoming backend migration.
+ * Supabase browser client for Phase 4 authentication.
  *
- * The current app intentionally continues to use local/demo auth and mock data.
- * Real Supabase auth, database queries, and schema-backed data will be wired in a
- * later phase after the database schema is created.
+ * The client is only created when both public Vite environment variables are
+ * present. Missing variables intentionally keep the app in demo/local auth mode
+ * so previews and builds continue to work without real Supabase credentials.
  */
 export const supabase: SupabaseClient | null =
   supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 export const isSupabaseConfigured = Boolean(supabase);
+
+if (!isSupabaseConfigured && typeof window !== "undefined") {
+  console.warn(
+    "Supabase auth is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to use Supabase Auth; falling back to demo/local auth."
+  );
+}
