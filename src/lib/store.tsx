@@ -426,7 +426,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (import.meta.env.DEV) console.info("Supabase realtime status", status);
       });
 
-    return () => { void supabase.removeChannel(channel); };
+    const client = supabase;
+    return () => { void client.removeChannel(channel); };
   }, [user, loadProjectsFromSupabase]);
 
   const login = async (email: string, password: string) => {
