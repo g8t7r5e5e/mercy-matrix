@@ -17,25 +17,24 @@ const QUICK = [
 ];
 
 function LoginPage() {
-  const { user, login } = useStore();
+  const { user, authLoading, login } = useStore();
   const navigate = useNavigate();
   const [email, setEmail] = useState("admin@welfareos.org");
   const [password, setPassword] = useState("password123");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (user) navigate({ to: "/app" }); }, [user, navigate]);
+  useEffect(() => { if (!authLoading && user) navigate({ to: "/app" }); }, [authLoading, user, navigate]);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErr(null);
     setLoading(true);
-    setTimeout(() => {
-      const error = login(email, password);
-      setLoading(false);
-      if (error) { setErr(error); return; }
-      toast.success("Welcome back to WelfareOS");
-      navigate({ to: "/app" });
-    }, 350);
+    const error = await login(email, password);
+    setLoading(false);
+    if (error) { setErr(error); return; }
+    toast.success("Welcome back to WelfareOS");
+    navigate({ to: "/app" });
   };
 
   return (
@@ -107,8 +106,8 @@ function LoginPage() {
 
               {err && <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
 
-              <Button type="submit" disabled={loading} className="h-11 w-full bg-gradient-brand shadow-glow hover:opacity-90">
-                {loading ? "Signing in..." : "Sign in"}
+              <Button type="submit" disabled={authLoading || loading} className="h-11 w-full bg-gradient-brand shadow-glow hover:opacity-90">
+                {authLoading ? "Checking session..." : loading ? "Signing in..." : "Sign in"}
               </Button>
             </div>
 

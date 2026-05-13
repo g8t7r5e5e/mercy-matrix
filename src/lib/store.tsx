@@ -1,13 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ACCOUNTS, SEED_PROJECTS, type Project, type User, type ProjectStatus } from "./mock-data";
+import { ACCOUNTS, SEED_PROJECTS, type Project, type User, type ProjectStatus, type Role } from "./mock-data";
+import { isSupabaseConfigured, supabase } from "./supabase";
 
 interface Notification { id: string; text: string; at: string; read: boolean; }
 interface Activity { id: string; text: string; at: string; kind: "donation" | "project" | "blood" | "system" | "member"; }
 
 interface StoreCtx {
   user: User | null;
-  login: (email: string, password: string) => string | null;
-  logout: () => void;
+  authLoading: boolean;
+  isSupabaseAuth: boolean;
+  login: (email: string, password: string) => Promise<string | null>;
+  logout: () => Promise<void>;
   projects: Project[];
   addProject: (p: Omit<Project, "id" | "createdAt" | "updatedAt" | "timeline" | "donations" | "messages" | "documents" | "raised"> & { raised?: number }) => string;
   updateProject: (id: string, patch: Partial<Project>) => void;
@@ -25,8 +28,43 @@ const Ctx = createContext<StoreCtx | null>(null);
 const SESSION_KEY = "welfareos.session.v1";
 const STATE_KEY = "welfareos.state.v1";
 
+type ProfileRow = {
+  id: string;
+  full_name: string | null;
+  role: Role | null;
+  wing?: { name: string | null } | Array<{ name: string | null }> | null;
+};
+
+function getWingName(profile: ProfileRow) {
+  if (Array.isArray(profile.wing)) return profile.wing[0]?.name ?? undefined;
+  return profile.wing?.name ?? undefined;
+}
+
+async function loadSupabaseUser(authUserId: string, email?: string | null): Promise<User> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, wing:wings(name)")
+    .eq("id", authUserId)
+    .single<ProfileRow>();
+
+  if (error || !profile) {
+    throw new Error("Your account is signed in, but no matching WelfareOS profile was found.");
+  }
+
+  return {
+    id: profile.id,
+    name: profile.full_name || email || "WelfareOS User",
+    email: email || "",
+    role: profile.role || "general_user",
+    wing: getWingName(profile),
+  };
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>(SEED_PROJECTS);
   const [notifications, setNotifications] = useState<Notification[]>([
     { id: "n1", text: "New project WOS-106 awaiting review", at: new Date().toISOString(), read: false },
@@ -41,17 +79,77 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     { id: "a5", text: "Proof uploaded by Finance Wing", at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), kind: "system" },
   ]);
 
-  // hydrate session
+  // hydrate persisted mock project state and whichever auth mode is available
   useEffect(() => {
-    try {
-      const s = localStorage.getItem(SESSION_KEY);
-      if (s) setUser(JSON.parse(s));
-      const st = localStorage.getItem(STATE_KEY);
-      if (st) {
-        const parsed = JSON.parse(st);
-        if (parsed.projects) setProjects(parsed.projects);
+    let cancelled = false;
+
+    const hydrate = async () => {
+      try {
+        const st = localStorage.getItem(STATE_KEY);
+        if (st) {
+          const parsed = JSON.parse(st);
+          if (parsed.projects) setProjects(parsed.projects);
+        }
+      } catch {}
+
+      if (!isSupabaseConfigured || !supabase) {
+        try {
+          const s = localStorage.getItem(SESSION_KEY);
+          if (s && !cancelled) setUser(JSON.parse(s));
+        } catch {}
+        if (!cancelled) setAuthLoading(false);
+        return;
       }
-    } catch {}
+
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      if (!data.session?.user) {
+        setUser(null);
+        setAuthLoading(false);
+        return;
+      }
+
+      try {
+        const nextUser = await loadSupabaseUser(data.session.user.id, data.session.user.email);
+        if (!cancelled) setUser(nextUser);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setAuthLoading(false);
+      }
+    };
+
+    void hydrate();
+
+    if (!isSupabaseConfigured || !supabase) {
+      return () => { cancelled = true; };
+    }
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return;
+      if (!session?.user) {
+        setUser(null);
+        setAuthLoading(false);
+        return;
+      }
+      setAuthLoading(true);
+      window.setTimeout(() => {
+        void loadSupabaseUser(session.user.id, session.user.email)
+          .then((nextUser) => { if (!cancelled) setUser(nextUser); })
+          .catch((error) => {
+            console.error(error);
+            if (!cancelled) setUser(null);
+          })
+          .finally(() => { if (!cancelled) setAuthLoading(false); });
+      }, 0);
+    });
+
+    return () => {
+      cancelled = true;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -63,7 +161,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const pushNotif = (text: string) =>
     setNotifications((n) => [{ id: Math.random().toString(36).slice(2), text, at: new Date().toISOString(), read: false }, ...n].slice(0, 20));
 
-  const login = (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) return "Invalid email or password";
+
+      try {
+        const nextUser = await loadSupabaseUser(data.user.id, data.user.email);
+        setUser(nextUser);
+        return null;
+      } catch (profileError) {
+        console.error(profileError);
+        await supabase.auth.signOut();
+        setUser(null);
+        return profileError instanceof Error ? profileError.message : "Unable to load your WelfareOS profile.";
+      }
+    }
+
     const acc = ACCOUNTS.find((a) => a.email.toLowerCase() === email.toLowerCase() && a.password === password);
     if (!acc) return "Invalid email or password";
     const { password: _pw, ...u } = acc;
@@ -71,7 +185,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(SESSION_KEY, JSON.stringify(u)); } catch {}
     return null;
   };
-  const logout = () => {
+
+  const logout = async () => {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
     setUser(null);
     try { localStorage.removeItem(SESSION_KEY); } catch {}
   };
@@ -133,9 +251,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const markAllNotificationsRead = () => setNotifications((n) => n.map((x) => ({ ...x, read: true })));
 
   const value = useMemo<StoreCtx>(() => ({
-    user, login, logout, projects, addProject, updateProject, addDonation, addMessage,
+    user, authLoading, isSupabaseAuth: isSupabaseConfigured, login, logout, projects, addProject, updateProject, addDonation, addMessage,
     closeProject, markBloodUsed, notifications, markAllNotificationsRead, activity,
-  }), [user, projects, notifications, activity]);
+  }), [user, authLoading, projects, notifications, activity]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

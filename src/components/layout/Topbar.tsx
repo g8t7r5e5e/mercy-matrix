@@ -15,7 +15,10 @@ const ROLE_LABEL: Record<string, string> = {
   super_admin: "Super Admin",
   wing_head: "Wing Head",
   member: "Member",
+  volunteer: "Volunteer",
   general_user: "General User",
+  donor: "Donor",
+  blood_donor: "Blood Donor",
 };
 
 export function Topbar() {
@@ -78,9 +81,9 @@ export function Topbar() {
             </Avatar>
             <div className="hidden text-left leading-tight md:block">
               <div className="text-xs font-semibold">{user.name}</div>
-              <div className="text-[10px] text-muted-foreground">{ROLE_LABEL[user.role]}</div>
+              <div className="text-[10px] text-muted-foreground">{ROLE_LABEL[user.role] ?? user.role}</div>
             </div>
-            <Badge variant="secondary" className="hidden lg:inline-flex">{ROLE_LABEL[user.role]}</Badge>
+            <Badge variant="secondary" className="hidden lg:inline-flex">{ROLE_LABEL[user.role] ?? user.role}</Badge>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -90,7 +93,7 @@ export function Topbar() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => navigate({ to: "/app/settings" })}>Settings</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => { logout(); navigate({ to: "/login" }); }}>
+          <DropdownMenuItem onClick={() => { void logout().finally(() => navigate({ to: "/login" })); }}>
             <LogOut className="mr-2 h-4 w-4" /> Logout
           </DropdownMenuItem>
         </DropdownMenuContent>
