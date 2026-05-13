@@ -13,11 +13,9 @@ function AppLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // wait a tick for hydration
-    const t = setTimeout(() => {
-      if (!authLoading && !user) navigate({ to: "/login" });
-    }, 50);
-    return () => clearTimeout(t);
+    if (!authLoading && !user) {
+      navigate({ to: "/login", replace: true });
+    }
   }, [authLoading, user, navigate]);
 
   if (authLoading || !user) {
