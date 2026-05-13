@@ -349,22 +349,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-
-      if (!data.session?.user) {
-        setUser(null);
-        setAuthLoading(false);
-        return;
-      }
+      // Safety: never let hydration hang forever (e.g. if Supabase is unreachable)
+      const safety = window.setTimeout(() => {
+        if (!cancelled) setAuthLoading(false);
+      }, 4000);
 
       try {
-        const nextUser = await loadSupabaseUser(data.session.user.id, data.session.user.email);
-        if (!cancelled) setUser(nextUser);
+        const { data } = await supabase.auth.getSession();
+        if (cancelled) return;
+
+        if (!data.session?.user) {
+          setUser(null);
+          return;
+        }
+
+        try {
+          const nextUser = await loadSupabaseUser(data.session.user.id, data.session.user.email);
+          if (!cancelled) setUser(nextUser);
+        } catch (error) {
+          console.error(error);
+          if (!cancelled) setUser(null);
+        }
       } catch (error) {
-        console.error(error);
+        console.error("Auth hydration failed", error);
         if (!cancelled) setUser(null);
       } finally {
+        window.clearTimeout(safety);
         if (!cancelled) setAuthLoading(false);
       }
     };
